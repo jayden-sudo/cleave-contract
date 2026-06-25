@@ -214,11 +214,7 @@ contract Series is ReentrancyGuard {
     }
 
     /// @notice Collateral out for redeeming `pAmount` P and `nAmount` N at a hypothetical price `x`.
-    function quoteRedeem(uint256 x, uint256 pAmount, uint256 nAmount)
-        external
-        view
-        returns (uint256 amountOut)
-    {
+    function quoteRedeem(uint256 x, uint256 pAmount, uint256 nAmount) external view returns (uint256 amountOut) {
         uint256 frac = _fraction(x);
         amountOut = (pAmount * frac) / WAD + (nAmount * (WAD - frac)) / WAD;
     }
@@ -264,9 +260,7 @@ contract Series is ReentrancyGuard {
     }
 
     function _collateralBalance() internal view returns (uint256) {
-        return address(collateralToken) == address(0)
-            ? address(this).balance
-            : collateralToken.balanceOf(address(this));
+        return address(collateralToken) == address(0) ? address(this).balance : collateralToken.balanceOf(address(this));
     }
 
     /// @dev Pay `amount` of collateral to `to` — native ETH or ERC20 depending on the series.

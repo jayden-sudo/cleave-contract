@@ -21,9 +21,7 @@ contract SplitFactoryTest is Test {
     }
 
     function _create() internal returns (Series) {
-        return factory.createSeries(
-            "ETH @ $2000", 2000e18, maturity, IPriceOracle(address(oracle)), "P", "P", "N", "N"
-        );
+        return factory.createSeries("ETH @ $2000", 2000e18, maturity, IPriceOracle(address(oracle)), "P", "P", "N", "N");
     }
 
     function test_createSeries_tracks_and_wires_tokens() public {
@@ -36,9 +34,8 @@ contract SplitFactoryTest is Test {
     }
 
     function test_createSeriesWithMockOracle_sets_caller_as_oracle_owner() public {
-        (Series s, MockOracle o) = factory.createSeriesWithMockOracle(
-            "ETH @ $1800", 1800e18, maturity, 1900e18, "P", "P", "N", "N"
-        );
+        (Series s, MockOracle o) =
+            factory.createSeriesWithMockOracle("ETH @ $1800", 1800e18, maturity, 1900e18, "P", "P", "N", "N");
         assertEq(o.owner(), address(this), "caller owns oracle");
         assertEq(o.price(), 1900e18);
         assertEq(address(s.oracle()), address(o));
@@ -109,9 +106,7 @@ contract SplitFactoryTest is Test {
     function _createMany(uint256 k) internal {
         for (uint256 i = 0; i < k; i++) {
             // distinct strike => distinct market => distinct series
-            factory.createSeries(
-                "x", (i + 1) * 1000e18, maturity, IPriceOracle(address(oracle)), "P", "P", "N", "N"
-            );
+            factory.createSeries("x", (i + 1) * 1000e18, maturity, IPriceOracle(address(oracle)), "P", "P", "N", "N");
         }
     }
 

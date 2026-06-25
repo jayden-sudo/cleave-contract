@@ -72,11 +72,7 @@ contract PythBenchmarkOracle is IPriceOracle {
     /// @notice Pin the final settlement price for `endTimestamp` (a series maturity) from a Pyth
     ///         Benchmarks update for that moment. Permissionless; signature + time-window verified
     ///         on-chain by Pyth; final once set. Forwards Pyth's fee and refunds any excess.
-    function pin(uint256 endTimestamp, bytes[] calldata updateData)
-        external
-        payable
-        returns (uint256 usdPerUnit)
-    {
+    function pin(uint256 endTimestamp, bytes[] calldata updateData) external payable returns (uint256 usdPerUnit) {
         if (endTimestamp > block.timestamp) revert FutureTimestamp();
         if (pinned[endTimestamp] != 0) revert AlreadyPinned();
 

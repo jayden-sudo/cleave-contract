@@ -138,10 +138,7 @@ contract ChainlinkBenchmarkOracle is IPriceOracle {
     /// @param successorRoundId The immediate next round after `roundId`; its `updatedAt` must be
     ///                         strictly after `endTimestamp`. (= roundId+1 within a phase, or the
     ///                         first round of the next phase across a phase migration.)
-    function pin(uint256 endTimestamp, uint80 roundId, uint80 successorRoundId)
-        external
-        returns (uint256 usdPerUnit)
-    {
+    function pin(uint256 endTimestamp, uint80 roundId, uint80 successorRoundId) external returns (uint256 usdPerUnit) {
         if (endTimestamp > block.timestamp) revert FutureTimestamp();
         if (pinned[endTimestamp] != 0) revert AlreadyPinned();
 

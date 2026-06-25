@@ -189,7 +189,7 @@ contract OracleAnchoredHook is BaseTestHooks, IUnlockCallback {
             params.zeroForOne ? (key.currency0, key.currency1) : (key.currency1, key.currency0);
 
         uint256 amountOut = (Currency.unwrap(input) == Currency.unwrap(pCurrency))
-            ? CleaveQuoteMath.usdcOutForP(amountIn, i, feeWad) // sell P -> USDC
+            ? CleaveQuoteMath.usdcOutForP(amountIn, i, feeWad)  // sell P -> USDC
             : CleaveQuoteMath.pOutForUsdc(amountIn, i, feeWad); // buy P with USDC
         if (amountOut == 0) revert ZeroOutput(); // dust input must not take() without paying out
 

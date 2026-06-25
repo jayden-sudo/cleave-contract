@@ -56,9 +56,7 @@ contract IntegrationForkTest is Test {
         // Strike well below current price so P is "in the money" and N has value.
         uint256 strike = (px * 60) / 100; // 60% of spot
         SplitFactory factory = new SplitFactory();
-        Series series = factory.createSeries(
-            "fork", strike, block.timestamp + 7 days, oracle, "P", "P", "N", "N"
-        );
+        Series series = factory.createSeries("fork", strike, block.timestamp + 7 days, oracle, "P", "P", "N", "N");
         SplitToken N = series.N();
 
         // Alice splits 5 ETH; sells all her N to Bob (simple transfer stands in).

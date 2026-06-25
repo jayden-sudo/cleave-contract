@@ -54,7 +54,10 @@ contract SeriesERC20Test is Test {
         assertEq(address(s.collateralToken()), address(token));
         // dedups per (collateral, strike, maturity, oracle)
         assertEq(address(_newSeries()), address(s));
-        assertEq(address(factory.seriesForCollateral(address(token), STRIKE, maturity, IPriceOracle(address(oracle)))), address(s));
+        assertEq(
+            address(factory.seriesForCollateral(address(token), STRIKE, maturity, IPriceOracle(address(oracle)))),
+            address(s)
+        );
         // a native-ETH market with the same strike/maturity/oracle is a DISTINCT market
         assertEq(address(factory.seriesFor(STRIKE, maturity, IPriceOracle(address(oracle)))), address(0));
     }

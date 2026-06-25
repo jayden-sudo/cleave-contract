@@ -22,7 +22,15 @@ contract MarketplaceTest is Test {
         market = new Marketplace();
         oracle = new MockOracle(2000e18);
         series = new Series(
-            "ETH split @ $1500", 1500e18, block.timestamp + 30 days, IPriceOracle(address(oracle)), address(0), "Cleave Stable", "sETH", "Cleave Upside", "uETH"
+            "ETH split @ $1500",
+            1500e18,
+            block.timestamp + 30 days,
+            IPriceOracle(address(oracle)),
+            address(0),
+            "Cleave Stable",
+            "sETH",
+            "Cleave Upside",
+            "uETH"
         );
         // seller splits 1 ETH -> holds 1 P + 1 N
         vm.deal(seller, 1 ether);
@@ -59,7 +67,7 @@ contract MarketplaceTest is Test {
         assertEq(series.N().balanceOf(buyer), 1 ether, "buyer got tokens");
         assertEq(seller.balance, 0.3 ether, "maker paid");
         assertEq(buyer.balance, 0.7 ether, "buyer spent exactly cost");
-        (,, uint256 amount, , bool active) = market.orders(id);
+        (,, uint256 amount,, bool active) = market.orders(id);
         assertEq(amount, 0);
         assertFalse(active, "order closed");
     }
@@ -72,7 +80,7 @@ contract MarketplaceTest is Test {
         market.buy{value: 0.2 ether}(id, 0.4 ether); // cost = 0.4 * 0.5 = 0.2
         assertEq(series.N().balanceOf(buyer), 0.4 ether);
         assertEq(seller.balance, 0.2 ether);
-        (,, uint256 amount, , bool active) = market.orders(id);
+        (,, uint256 amount,, bool active) = market.orders(id);
         assertEq(amount, 0.6 ether, "remaining");
         assertTrue(active);
 
@@ -80,7 +88,7 @@ contract MarketplaceTest is Test {
         market.buy{value: 0.3 ether}(id, 0.6 ether); // cost = 0.3
         assertEq(series.N().balanceOf(buyer), 1 ether);
         assertEq(seller.balance, 0.5 ether);
-        (,,, , bool active2) = market.orders(id);
+        (,,,, bool active2) = market.orders(id);
         assertFalse(active2);
     }
 
@@ -114,7 +122,7 @@ contract MarketplaceTest is Test {
         vm.prank(seller);
         market.cancel(id);
         assertEq(series.N().balanceOf(seller), 1 ether, "tokens returned");
-        (,,, , bool active) = market.orders(id);
+        (,,,, bool active) = market.orders(id);
         assertFalse(active);
     }
 

@@ -192,10 +192,7 @@ contract CleaveQuoteMathSymbolicTest is Test {
 
     /// @notice MONOTONIC in the guide. ∀ i1 <= i2 (same spot/strike): the clamped
     ///         output is nondecreasing — the clamp can never invert the keeper signal.
-    function check_clampGuide_monotonic_in_guide(uint256 i1, uint256 i2, uint256 spot, uint256 strike)
-        public
-        view
-    {
+    function check_clampGuide_monotonic_in_guide(uint256 i1, uint256 i2, uint256 spot, uint256 strike) public view {
         vm.assume(spot <= MAX_PRICE && strike <= MAX_PRICE);
         vm.assume(i1 <= MAX_PRICE && i2 <= MAX_PRICE);
         vm.assume(i1 <= i2);
@@ -214,9 +211,8 @@ contract CleaveQuoteMathSymbolicTest is Test {
     ///         unreachable. The hook also independently caps fee <= maxFeeWad < WAD.
     function check_usdcOutForP_reverts_when_fee_ge_wad(uint256 pIn, uint256 iWad, uint256 feeWad) public view {
         vm.assume(feeWad >= WAD);
-        (bool ok,) = address(q).staticcall(
-            abi.encodeWithSelector(CleaveQuoteMathHarness.usdcOutForP.selector, pIn, iWad, feeWad)
-        );
+        (bool ok,) = address(q)
+            .staticcall(abi.encodeWithSelector(CleaveQuoteMathHarness.usdcOutForP.selector, pIn, iWad, feeWad));
         assertFalse(ok, "fee >= WAD did not revert");
     }
 
@@ -324,7 +320,9 @@ contract CleaveQuoteMathSymbolicTest is Test {
     function check_lemma_multiplier_monotone(uint128 v, uint64 g1, uint64 g2) public pure {
         vm.assume(g1 <= g2);
         assertLe(
-            (uint256(v) * uint256(g1)) / WAD, (uint256(v) * uint256(g2)) / WAD, "floor-mul-div not monotone in multiplier"
+            (uint256(v) * uint256(g1)) / WAD,
+            (uint256(v) * uint256(g2)) / WAD,
+            "floor-mul-div not monotone in multiplier"
         );
     }
 
