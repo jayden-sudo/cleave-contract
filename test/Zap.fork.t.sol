@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SplitFactory} from "../src/SplitFactory.sol";
 import {Series} from "../src/Series.sol";
 import {SplitToken} from "../src/SplitToken.sol";
+import {ISeries} from "../src/interfaces/ISeries.sol";
 import {CleaveZap, ISwapRouter02, IWETH9} from "../src/CleaveZap.sol";
 import {UniswapV3MedianOracle} from "../src/oracle/UniswapV3MedianOracle.sol";
 
@@ -37,10 +38,7 @@ interface INonfungiblePositionManager {
 }
 
 interface IUniswapV3PoolSlot0 {
-    function slot0()
-        external
-        view
-        returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, uint8, bool);
+    function slot0() external view returns (uint160 sqrtPriceX96, int24 tick, uint16, uint16, uint16, uint8, bool);
 }
 
 /// @notice Boost/Yield zap against REAL mainnet Uniswap V3: deploy the median oracle,
@@ -135,8 +133,7 @@ contract ZapForkTest is Test {
 
     function _initSqrtPrice() internal view returns (uint160) {
         // raw price = token1 raw units per token0 raw unit, as a num/den rational
-        (uint256 num, uint256 den) =
-            pIsToken0 ? (_usdcPerP(), uint256(1e18)) : (uint256(1e18), _usdcPerP());
+        (uint256 num, uint256 den) = pIsToken0 ? (_usdcPerP(), uint256(1e18)) : (uint256(1e18), _usdcPerP());
         return uint160(Math.sqrt((num << 192) / den));
     }
 
@@ -155,8 +152,9 @@ contract ZapForkTest is Test {
         P.approve(NPM, type(uint256).max);
         IERC20(USDC).approve(NPM, type(uint256).max);
         (uint256 amount0Desired, uint256 amount1Desired) = pIsToken0 ? (pSeed, usdcSeed) : (usdcSeed, pSeed);
-        INonfungiblePositionManager(NPM).mint(
-            INonfungiblePositionManager.MintParams({
+        INonfungiblePositionManager(NPM)
+            .mint(
+                INonfungiblePositionManager.MintParams({
                 token0: token0,
                 token1: token1,
                 fee: FEE,
@@ -169,7 +167,7 @@ contract ZapForkTest is Test {
                 recipient: founder,
                 deadline: block.timestamp + 600
             })
-        );
+            );
     }
 
     /// @dev Round a tick down to a multiple of `spacing` (toward negative infinity).
@@ -197,7 +195,7 @@ contract ZapForkTest is Test {
         vm.deal(bull, ethIn);
         vm.prank(bull);
         (uint256 nOut, uint256 quoteOut) =
-            zap.boost{value: ethIn}(series, FEE, minQuote, block.timestamp + 600);
+            zap.boost{value: ethIn}(ISeries(address(series)), FEE, minQuote, block.timestamp + 600);
 
         assertEq(nOut, ethIn, "nOut");
         assertEq(N.balanceOf(bull), ethIn, "bull N");
@@ -215,7 +213,7 @@ contract ZapForkTest is Test {
         uint256 minP = (expectP * 95) / 100;
         vm.startPrank(saver);
         IERC20(USDC).approve(address(zap), usdcIn);
-        uint256 pOut = zap.yieldBuy(series, FEE, usdcIn, minP, block.timestamp + 600);
+        uint256 pOut = zap.yieldBuy(ISeries(address(series)), FEE, usdcIn, minP, block.timestamp + 600);
         vm.stopPrank();
 
         assertEq(P.balanceOf(saver), pOut, "saver P");
@@ -237,8 +235,9 @@ contract ZapForkTest is Test {
         // theoretical 1/(1−p) multiple. Require at least 2.5× upside net of fees + impact.
         vm.deal(bull, ethIn);
         vm.prank(bull);
-        (uint256 nOut, uint256 ethBack) =
-            zap.boostFull{value: ethIn}(series, FEE, 500, 12, (ethIn * 25) / 10, block.timestamp + 600);
+        (uint256 nOut, uint256 ethBack) = zap.boostFull{value: ethIn}(
+            ISeries(address(series)), FEE, 500, 12, (ethIn * 25) / 10, block.timestamp + 600
+        );
 
         assertEq(N.balanceOf(bull), nOut, "bull N");
         assertGe(nOut, (ethIn * 25) / 10, "should multiply upside at least 2.5x");
@@ -253,10 +252,10 @@ contract ZapForkTest is Test {
         vm.deal(bull, 1 ether);
         vm.prank(bull);
         vm.expectRevert(CleaveZap.BadRounds.selector);
-        zap.boostFull{value: 0.5 ether}(series, FEE, 500, 0, 0, block.timestamp + 600);
+        zap.boostFull{value: 0.5 ether}(ISeries(address(series)), FEE, 500, 0, 0, block.timestamp + 600);
         vm.prank(bull);
         vm.expectRevert(CleaveZap.Slippage.selector);
-        zap.boostFull{value: 0.5 ether}(series, FEE, 500, 8, 100 ether, block.timestamp + 600);
+        zap.boostFull{value: 0.5 ether}(ISeries(address(series)), FEE, 500, 8, 100 ether, block.timestamp + 600);
         _assertZapStateless();
     }
 
@@ -268,17 +267,17 @@ contract ZapForkTest is Test {
         // deadline in the past
         vm.prank(bull);
         vm.expectRevert(CleaveZap.Expired.selector);
-        zap.boost{value: 1 ether}(series, FEE, 0, block.timestamp - 1);
+        zap.boost{value: 1 ether}(ISeries(address(series)), FEE, 0, block.timestamp - 1);
 
         // zero value
         vm.prank(bull);
         vm.expectRevert(CleaveZap.ZeroAmount.selector);
-        zap.boost{value: 0}(series, FEE, 0, block.timestamp + 600);
+        zap.boost{value: 0}(ISeries(address(series)), FEE, 0, block.timestamp + 600);
 
         // absurd slippage floor must revert inside the router
         vm.prank(bull);
         vm.expectRevert();
-        zap.boost{value: 1 ether}(series, FEE, type(uint128).max, block.timestamp + 600);
+        zap.boost{value: 1 ether}(ISeries(address(series)), FEE, type(uint128).max, block.timestamp + 600);
 
         // ERC20-collateral series is rejected
         Series tokenSeries = factory.createSeriesWithCollateral(
@@ -286,13 +285,13 @@ contract ZapForkTest is Test {
         );
         vm.prank(bull);
         vm.expectRevert(CleaveZap.NotNativeSeries.selector);
-        zap.boost{value: 1 ether}(tokenSeries, FEE, 0, block.timestamp + 600);
+        zap.boost{value: 1 ether}(ISeries(address(tokenSeries)), FEE, 0, block.timestamp + 600);
 
         // post-maturity boost reverts via Series.TradingClosed
         vm.warp(series.maturity() + 1);
         vm.prank(bull);
         vm.expectRevert(Series.TradingClosed.selector);
-        zap.boost{value: 1 ether}(series, FEE, 0, block.timestamp + 600);
+        zap.boost{value: 1 ether}(ISeries(address(series)), FEE, 0, block.timestamp + 600);
         _assertZapStateless();
     }
 }

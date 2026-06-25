@@ -4,8 +4,7 @@ pragma solidity ^0.8.24;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Series} from "./Series.sol";
-import {SplitToken} from "./SplitToken.sol";
+import {ISeries} from "./interfaces/ISeries.sol";
 
 /// @notice Minimal subset of Uniswap V3 SwapRouter02 (deadline lives on the caller side).
 interface ISwapRouter02 {
@@ -91,7 +90,7 @@ contract CleaveZap is ReentrancyGuard {
     /// @param poolFee     Uniswap V3 fee tier of the P/quote pool (e.g. 10000 = 1%).
     /// @param minQuoteOut Slippage guard on the P sale, in quote-token units.
     /// @param deadline    Unix timestamp after which the call reverts.
-    function boost(Series series, uint24 poolFee, uint256 minQuoteOut, uint256 deadline)
+    function boost(ISeries series, uint24 poolFee, uint256 minQuoteOut, uint256 deadline)
         external
         payable
         nonReentrant
@@ -99,13 +98,13 @@ contract CleaveZap is ReentrancyGuard {
         returns (uint256 nOut, uint256 quoteOut)
     {
         if (msg.value == 0) revert ZeroAmount();
-        if (address(series.collateralToken()) != address(0)) revert NotNativeSeries();
+        if (series.collateralToken() != address(0)) revert NotNativeSeries();
 
         // Mints msg.value of P and N to this contract; reverts at/after maturity.
         series.split{value: msg.value}();
 
-        SplitToken p = series.P();
-        IERC20(address(p)).forceApprove(address(swapRouter), msg.value);
+        IERC20 p = IERC20(series.P());
+        p.forceApprove(address(swapRouter), msg.value);
         quoteOut = swapRouter.exactInputSingle(
             ISwapRouter02.ExactInputSingleParams({
                 tokenIn: address(p),
@@ -119,7 +118,7 @@ contract CleaveZap is ReentrancyGuard {
         );
 
         nOut = msg.value;
-        IERC20(address(series.N())).safeTransfer(msg.sender, nOut);
+        IERC20(series.N()).safeTransfer(msg.sender, nOut);
         emit Boosted(msg.sender, address(series), msg.value, nOut, quoteOut, poolFee);
     }
 
@@ -135,7 +134,7 @@ contract CleaveZap is ReentrancyGuard {
     /// @param minNOut  Aggregate slippage guard on the upside received.
     /// @param deadline Unix timestamp after which the call reverts.
     function boostFull(
-        Series series,
+        ISeries series,
         uint24 poolFee,
         uint24 wethFee,
         uint256 rounds,
@@ -144,13 +143,13 @@ contract CleaveZap is ReentrancyGuard {
     ) external payable nonReentrant notExpired(deadline) returns (uint256 nOut, uint256 ethBack) {
         if (msg.value == 0) revert ZeroAmount();
         if (rounds == 0 || rounds > 16) revert BadRounds();
-        if (address(series.collateralToken()) != address(0)) revert NotNativeSeries();
+        if (series.collateralToken() != address(0)) revert NotNativeSeries();
 
-        SplitToken p = series.P();
+        IERC20 p = IERC20(series.P());
         uint256 eth = msg.value;
         for (uint256 i; i < rounds && eth > 0.005 ether; ++i) {
             series.split{value: eth}();
-            IERC20(address(p)).forceApprove(address(swapRouter), eth);
+            p.forceApprove(address(swapRouter), eth);
             // Per-hop minimums stay 0: `minNOut` guards the aggregate outcome below.
             uint256 quoteOut = swapRouter.exactInputSingle(
                 ISwapRouter02.ExactInputSingleParams({
@@ -179,9 +178,9 @@ contract CleaveZap is ReentrancyGuard {
             eth = wethOut;
         }
 
-        nOut = IERC20(address(series.N())).balanceOf(address(this));
+        nOut = IERC20(series.N()).balanceOf(address(this));
         if (nOut < minNOut) revert Slippage();
-        IERC20(address(series.N())).safeTransfer(msg.sender, nOut);
+        IERC20(series.N()).safeTransfer(msg.sender, nOut);
 
         ethBack = address(this).balance;
         if (ethBack > 0) {
@@ -198,7 +197,7 @@ contract CleaveZap is ReentrancyGuard {
     /// @param quoteIn  Quote-token amount to spend.
     /// @param minPOut  Slippage guard on the P purchase, in P units (1e18).
     /// @param deadline Unix timestamp after which the call reverts.
-    function yieldBuy(Series series, uint24 poolFee, uint256 quoteIn, uint256 minPOut, uint256 deadline)
+    function yieldBuy(ISeries series, uint24 poolFee, uint256 quoteIn, uint256 minPOut, uint256 deadline)
         external
         nonReentrant
         notExpired(deadline)
@@ -211,7 +210,7 @@ contract CleaveZap is ReentrancyGuard {
         pOut = swapRouter.exactInputSingle(
             ISwapRouter02.ExactInputSingleParams({
                 tokenIn: address(quote),
-                tokenOut: address(series.P()),
+                tokenOut: series.P(),
                 fee: poolFee,
                 recipient: msg.sender,
                 amountIn: quoteIn,

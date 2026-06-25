@@ -13,6 +13,7 @@ import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Series} from "../src/Series.sol";
 import {SplitToken} from "../src/SplitToken.sol";
+import {ISeries} from "../src/interfaces/ISeries.sol";
 import {IPriceOracle} from "../src/interfaces/IPriceOracle.sol";
 import {OracleAnchoredHook, IFastOracle} from "../src/amm/OracleAnchoredHook.sol";
 import {CleaveZapV4} from "../src/amm/CleaveZapV4.sol";
@@ -59,7 +60,9 @@ contract CleaveZapV4Test is Test {
         oracle.set(1650e18);
 
         // Native-ETH series; its P trades against USDC.
-        series = new Series("flagship", STRIKE, block.timestamp + 30 days, IPriceOracle(address(oracle)), address(0), "P", "P", "N", "N");
+        series = new Series(
+            "flagship", STRIKE, block.timestamp + 30 days, IPriceOracle(address(oracle)), address(0), "P", "P", "N", "N"
+        );
         P = series.P();
         USDC = new MockERC20("USD Coin", "USDC", 6);
         cP = Currency.wrap(address(P));
@@ -69,11 +72,28 @@ contract CleaveZapV4Test is Test {
         // Hook for P/USDC.
         uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG);
         bytes memory args = abi.encode(
-            IPoolManager(address(manager)), IFastOracle(address(oracle)), cP, cUSDC, STRIKE, uint256(0.05e18), uint256(1 hours), keeper, address(this)
+            IPoolManager(address(manager)),
+            IFastOracle(address(oracle)),
+            cP,
+            cUSDC,
+            STRIKE,
+            uint256(0.05e18),
+            uint256(1 hours),
+            keeper,
+            address(this)
         );
-        (address hookAddr, bytes32 salt) = HookMiner.find(address(this), flags, type(OracleAnchoredHook).creationCode, args);
+        (address hookAddr, bytes32 salt) =
+            HookMiner.find(address(this), flags, type(OracleAnchoredHook).creationCode, args);
         hook = new OracleAnchoredHook{salt: salt}(
-            IPoolManager(address(manager)), IFastOracle(address(oracle)), cP, cUSDC, STRIKE, 0.05e18, 1 hours, keeper, address(this)
+            IPoolManager(address(manager)),
+            IFastOracle(address(oracle)),
+            cP,
+            cUSDC,
+            STRIKE,
+            0.05e18,
+            1 hours,
+            keeper,
+            address(this)
         );
         assertEq(address(hook), hookAddr);
 
@@ -98,7 +118,7 @@ contract CleaveZapV4Test is Test {
     function test_boost_sells_P_into_hook() public {
         uint256 dl = block.timestamp + 600;
         vm.prank(user);
-        (uint256 nOut, uint256 quoteOut) = zap.boost{value: 1 ether}(series, key, 1338e6, dl);
+        (uint256 nOut, uint256 quoteOut) = zap.boost{value: 1 ether}(ISeries(address(series)), key, 1338e6, dl);
 
         assertEq(nOut, 1e18, "user gets 1 N per ETH");
         assertEq(quoteOut, 1338_971000, "P sold at oracle - fee: $1343 * 0.997");
@@ -112,7 +132,7 @@ contract CleaveZapV4Test is Test {
         uint256 dl = block.timestamp + 600;
         vm.startPrank(user);
         USDC.approve(address(zap), type(uint256).max);
-        uint256 pOut = zap.yieldBuy(series, key, 1343e6, 0.99e18, dl);
+        uint256 pOut = zap.yieldBuy(ISeries(address(series)), key, 1343e6, 0.99e18, dl);
         vm.stopPrank();
 
         // $1343 at $1343 * 1.003 -> ~0.997 P
@@ -124,6 +144,6 @@ contract CleaveZapV4Test is Test {
         uint256 dl = block.timestamp + 600;
         vm.prank(user);
         vm.expectRevert(CleaveZapV4.Slippage.selector);
-        zap.boost{value: 1 ether}(series, key, 1400e6, dl); // demand more than fair -> revert
+        zap.boost{value: 1 ether}(ISeries(address(series)), key, 1400e6, dl); // demand more than fair -> revert
     }
 }
