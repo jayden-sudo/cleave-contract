@@ -7,7 +7,7 @@ import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Series} from "../src/Series.sol";
+import {ISeries} from "../src/interfaces/ISeries.sol";
 import {CleaveZapV4} from "../src/amm/CleaveZapV4.sol";
 
 /// @notice Deploy CleaveZapV4 to the testnet and run a full Boost end-to-end through the already-
@@ -33,7 +33,8 @@ contract DeployZapV4 is Script {
         uint256 usdcBefore = IERC20(USDC).balanceOf(me);
         // minQuoteOut below any clamped fill on 0.5 P (max ~0.5*strike*(1-fee) ~ 665e6); the live quote
         // pays more. (Hardcoding 680e6 reverted Slippage against the $1,343 quote.)
-        (uint256 nOut, uint256 quoteOut) = zap.boost{value: 0.5 ether}(Series(payable(SERIES)), key, 600e6, block.timestamp + 600);
+        (uint256 nOut, uint256 quoteOut) =
+            zap.boost{value: 0.5 ether}(ISeries(SERIES), key, 600e6, block.timestamp + 600);
 
         vm.stopBroadcast();
 

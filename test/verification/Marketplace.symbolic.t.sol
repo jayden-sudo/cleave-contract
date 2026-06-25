@@ -62,9 +62,7 @@ contract MarketplaceSymbolicTest is Test {
     ///         exactly `buyAmt` tokens to the buyer, pays the maker exactly
     ///         `buyAmt * price / 1e18`, refunds the entire excess to the buyer,
     ///         and leaves no ETH stuck in the contract.
-    function check_buy_conserves_tokens_and_eth(uint96 amount, uint96 price, uint96 buyAmt, uint96 sent)
-        public
-    {
+    function check_buy_conserves_tokens_and_eth(uint96 amount, uint96 price, uint96 buyAmt, uint96 sent) public {
         uint256 id = _list(amount, price);
 
         vm.assume(buyAmt > 0 && buyAmt <= amount);
@@ -123,9 +121,7 @@ contract MarketplaceSymbolicTest is Test {
     ///         and a later `withdraw()` pays out exactly the credit, leaving the
     ///         contract empty. Closes the pull-payment half of the escrow story —
     ///         the EOA checks above only cover the push path.
-    function check_failed_push_credits_then_withdraw_pays_exactly(uint96 amount, uint96 price, uint96 buyAmt)
-        public
-    {
+    function check_failed_push_credits_then_withdraw_pays_exactly(uint96 amount, uint96 price, uint96 buyAmt) public {
         vm.assume(amount > 0 && price > 0);
         ToggleReceiver maker = new ToggleReceiver(); // accepting == false: pushes fail
         token.mint(address(maker), amount);
@@ -156,15 +152,12 @@ contract MarketplaceSymbolicTest is Test {
     }
 
     /// @notice ∀ fill > remaining: over-buying an order is impossible.
-    function check_cannot_buy_more_than_listed(uint96 amount, uint96 price, uint256 buyAmt, uint96 sent)
-        public
-    {
+    function check_cannot_buy_more_than_listed(uint96 amount, uint96 price, uint256 buyAmt, uint96 sent) public {
         uint256 id = _list(amount, price);
         vm.assume(buyAmt > amount);
 
         vm.deal(address(this), sent);
-        (bool ok,) =
-            address(market).call{value: sent}(abi.encodeWithSelector(Marketplace.buy.selector, id, buyAmt));
+        (bool ok,) = address(market).call{value: sent}(abi.encodeWithSelector(Marketplace.buy.selector, id, buyAmt));
         assertFalse(ok, "bought more than listed");
     }
 
@@ -178,8 +171,7 @@ contract MarketplaceSymbolicTest is Test {
         vm.assume(sent < cost || cost == 0);
 
         vm.deal(address(this), sent);
-        (bool ok,) =
-            address(market).call{value: sent}(abi.encodeWithSelector(Marketplace.buy.selector, id, buyAmt));
+        (bool ok,) = address(market).call{value: sent}(abi.encodeWithSelector(Marketplace.buy.selector, id, buyAmt));
         assertFalse(ok, "underpaid or dust fill accepted");
     }
 

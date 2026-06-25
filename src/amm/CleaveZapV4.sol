@@ -11,8 +11,7 @@ import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {CurrencySettler} from "@uniswap/v4-core/test/utils/CurrencySettler.sol";
-import {Series} from "../Series.sol";
-import {SplitToken} from "../SplitToken.sol";
+import {ISeries} from "../interfaces/ISeries.sol";
 
 /// @title CleaveZapV4
 /// @notice The v4 repoint of CleaveZap: one-click Boost / Earn on top of a Series whose cash leg (P)
@@ -52,7 +51,7 @@ contract CleaveZapV4 is ReentrancyGuard, IUnlockCallback {
     }
 
     /// @notice Split `msg.value` ETH into P + N, sell all P into the hook pool, send N + USDC.
-    function boost(Series series, PoolKey calldata key, uint256 minQuoteOut, uint256 deadline)
+    function boost(ISeries series, PoolKey calldata key, uint256 minQuoteOut, uint256 deadline)
         external
         payable
         nonReentrant
@@ -60,20 +59,20 @@ contract CleaveZapV4 is ReentrancyGuard, IUnlockCallback {
         returns (uint256 nOut, uint256 quoteOut)
     {
         if (msg.value == 0) revert ZeroAmount();
-        if (address(series.collateralToken()) != address(0)) revert NotNativeSeries();
+        if (series.collateralToken() != address(0)) revert NotNativeSeries();
 
         series.split{value: msg.value}();
-        quoteOut = _swapExactIn(key, address(series.P()), msg.value);
+        quoteOut = _swapExactIn(key, series.P(), msg.value);
         if (quoteOut < minQuoteOut) revert Slippage();
         quote.safeTransfer(msg.sender, quoteOut);
 
         nOut = msg.value;
-        IERC20(address(series.N())).safeTransfer(msg.sender, nOut);
+        IERC20(series.N()).safeTransfer(msg.sender, nOut);
         emit Boosted(msg.sender, address(series), msg.value, nOut, quoteOut);
     }
 
     /// @notice Pull `quoteIn` USDC, buy P from the hook pool, send the P to the caller.
-    function yieldBuy(Series series, PoolKey calldata key, uint256 quoteIn, uint256 minPOut, uint256 deadline)
+    function yieldBuy(ISeries series, PoolKey calldata key, uint256 quoteIn, uint256 minPOut, uint256 deadline)
         external
         nonReentrant
         notExpired(deadline)
@@ -84,7 +83,7 @@ contract CleaveZapV4 is ReentrancyGuard, IUnlockCallback {
         quote.safeTransferFrom(msg.sender, address(this), quoteIn);
         pOut = _swapExactIn(key, address(quote), quoteIn);
         if (pOut < minPOut) revert Slippage();
-        IERC20(address(series.P())).safeTransfer(msg.sender, pOut);
+        IERC20(series.P()).safeTransfer(msg.sender, pOut);
         emit Yielded(msg.sender, address(series), quoteIn, pOut);
     }
 

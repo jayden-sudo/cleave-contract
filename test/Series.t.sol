@@ -23,7 +23,15 @@ contract SeriesTest is Test {
         oracle = new MockOracle(2000e18);
         maturity = block.timestamp + 30 days;
         series = new Series(
-            "ETH split @ $1500", STRIKE, maturity, IPriceOracle(address(oracle)), address(0), "Cleave Stable", "sETH", "Cleave Upside", "uETH"
+            "ETH split @ $1500",
+            STRIKE,
+            maturity,
+            IPriceOracle(address(oracle)),
+            address(0),
+            "Cleave Stable",
+            "sETH",
+            "Cleave Upside",
+            "uETH"
         );
     }
 

@@ -62,8 +62,9 @@ contract OracleAnchoredHookTest is Test {
 
         // Mine a hook address with the BEFORE_SWAP + BEFORE_SWAP_RETURNS_DELTA flags.
         uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG);
-        bytes memory args =
-            abi.encode(IPoolManager(address(manager)), oracle, cP, cUSDC, STRIKE, MAX_FEE, MAX_AGE, keeper, address(this));
+        bytes memory args = abi.encode(
+            IPoolManager(address(manager)), oracle, cP, cUSDC, STRIKE, MAX_FEE, MAX_AGE, keeper, address(this)
+        );
         (address hookAddr, bytes32 salt) =
             HookMiner.find(address(this), flags, type(OracleAnchoredHook).creationCode, args);
         hook = new OracleAnchoredHook{salt: salt}(
@@ -103,9 +104,7 @@ contract OracleAnchoredHookTest is Test {
             sqrtPriceLimitX96: zeroForOne ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1
         });
         vm.prank(user);
-        return swapRouter.swap(
-            key, params, PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}), ""
-        );
+        return swapRouter.swap(key, params, PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}), "");
     }
 
     function test_sellP_executes_at_oracle_minus_fee() public {

@@ -66,7 +66,9 @@ contract Marketplace is ReentrancyGuard {
         uint256 received = IERC20(token).balanceOf(address(this)) - balBefore;
         if (received == 0) revert ZeroAmount();
         id = orders.length;
-        orders.push(Order({maker: msg.sender, token: token, amount: received, pricePerToken: pricePerToken, active: true}));
+        orders.push(
+            Order({maker: msg.sender, token: token, amount: received, pricePerToken: pricePerToken, active: true})
+        );
         emit Listed(id, msg.sender, token, received, pricePerToken);
     }
 

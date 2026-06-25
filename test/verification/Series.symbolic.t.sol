@@ -210,9 +210,7 @@ contract SeriesSymbolicTest is Test {
     ///             floor(p*f/1e18) + floor(n*(1e18-f)/1e18)
     ///         (no path pays more), the escrow decreases by exactly that amount,
     ///         and exactly p of P and n of N are burned.
-    function check_redeem_pays_spec_exactly(uint96 sp, uint96 sn, uint256 f, uint96 p, uint96 n)
-        public
-    {
+    function check_redeem_pays_spec_exactly(uint96 sp, uint96 sn, uint256 f, uint96 p, uint96 n) public {
         vm.assume(f <= WAD);
         vm.assume(p <= sp && n <= sn);
         vm.assume(p > 0 || n > 0);
@@ -322,8 +320,7 @@ contract SeriesSymbolicTest is Test {
 
     /// @notice ∀ p, n: redeem is impossible before settlement.
     function check_no_redeem_before_settle(uint96 p, uint96 n) public {
-        (bool ok,) =
-            address(series).call(abi.encodeWithSignature("redeem(uint256,uint256)", uint256(p), uint256(n)));
+        (bool ok,) = address(series).call(abi.encodeWithSignature("redeem(uint256,uint256)", uint256(p), uint256(n)));
         assertFalse(ok, "redeemed before settlement");
     }
 
@@ -353,9 +350,8 @@ contract SeriesSymbolicTest is Test {
     function check_eth_series_rejects_erc20_path(uint256 amount) public {
         (bool ok,) = address(series).call(abi.encodeWithSignature("splitERC20(uint256)", amount));
         assertFalse(ok, "ETH series accepted ERC20 split");
-        (bool ok2,) = address(series).call(
-            abi.encodeWithSignature("splitToERC20(address,uint256)", address(this), amount)
-        );
+        (bool ok2,) =
+            address(series).call(abi.encodeWithSignature("splitToERC20(address,uint256)", address(this), amount));
         assertFalse(ok2, "ETH series accepted ERC20 splitTo");
     }
 
@@ -393,8 +389,7 @@ contract SeriesSymbolicTest is Test {
         assertFalse(okTo, "splitTo minted after maturity");
         (bool okErc,) = address(ts).call(abi.encodeWithSignature("splitERC20(uint256)", uint256(a)));
         assertFalse(okErc, "splitERC20 minted after maturity");
-        (bool okToErc,) =
-            address(ts).call(abi.encodeWithSignature("splitToERC20(address,uint256)", to, uint256(a)));
+        (bool okToErc,) = address(ts).call(abi.encodeWithSignature("splitToERC20(address,uint256)", to, uint256(a)));
         assertFalse(okToErc, "splitToERC20 minted after maturity");
     }
 }

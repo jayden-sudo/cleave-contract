@@ -12,10 +12,7 @@ import {BalanceDelta} from "@uniswap/v4-core/src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "@uniswap/v4-core/src/test/PoolSwapTest.sol";
 import {HookMiner} from "@uniswap/v4-periphery/test/shared/HookMiner.sol";
 import {OracleAnchoredHook, IFastOracle} from "../src/amm/OracleAnchoredHook.sol";
-
-interface ISeries {
-    function split() external payable;
-}
+import {ISeries} from "../src/interfaces/ISeries.sol";
 
 interface ISwapRouter02 {
     struct ExactInputSingleParams {
@@ -90,12 +87,28 @@ contract DeployOracleAmm is Script {
     function _deployHook(address me) internal returns (OracleAnchoredHook hook) {
         uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG);
         bytes memory args = abi.encode(
-            IPoolManager(MANAGER), IFastOracle(ORACLE), Currency.wrap(P), Currency.wrap(USDC), STRIKE, MAX_FEE, MAX_AGE, me, me
+            IPoolManager(MANAGER),
+            IFastOracle(ORACLE),
+            Currency.wrap(P),
+            Currency.wrap(USDC),
+            STRIKE,
+            MAX_FEE,
+            MAX_AGE,
+            me,
+            me
         );
         (address hookAddr, bytes32 salt) =
             HookMiner.find(CREATE2_DEPLOYER, flags, type(OracleAnchoredHook).creationCode, args);
         hook = new OracleAnchoredHook{salt: salt}(
-            IPoolManager(MANAGER), IFastOracle(ORACLE), Currency.wrap(P), Currency.wrap(USDC), STRIKE, MAX_FEE, MAX_AGE, me, me
+            IPoolManager(MANAGER),
+            IFastOracle(ORACLE),
+            Currency.wrap(P),
+            Currency.wrap(USDC),
+            STRIKE,
+            MAX_FEE,
+            MAX_AGE,
+            me,
+            me
         );
         require(address(hook) == hookAddr, "hook addr mismatch");
     }
